@@ -22,7 +22,7 @@ device = torch.device("cuda:0")
 def test_rasterization(
     per_view_color: bool, sh_degree: Optional[int], render_mode: str, packed: bool
 ):
-    from gsplat.rendering import _rasterization, rasterization
+    from gsplat.rendering_torch import _rasterization, rasterization
 
     torch.manual_seed(42)
 

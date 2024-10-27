@@ -21,7 +21,7 @@ import viser
 
 from gsplat._helper import load_test_data
 from gsplat.distributed import cli
-from gsplat.rendering import rasterization
+from gsplat.rendering_torch import rasterization
 
 
 def main(local_rank: int, world_rank, world_size: int, args):

@@ -239,7 +239,7 @@ def test_rasterize_to_pixels_2dgs(test_data):
         isect_tiles,
         rasterize_to_pixels_2dgs,
     )
-    from gsplat.rendering import rasterization_2dgs_inria_wrapper
+    from gsplat.rendering_torch import rasterization_2dgs_inria_wrapper
 
     Ks = test_data["Ks"]
     viewmats = test_data["viewmats"]

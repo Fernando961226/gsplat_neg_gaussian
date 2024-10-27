@@ -14,7 +14,7 @@ device = torch.device("cuda:0")
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="No CUDA device")
 def test_strategy():
-    from gsplat.rendering import rasterization
+    from gsplat.rendering_torch import rasterization
     from gsplat.strategy import DefaultStrategy, MCMCStrategy
 
     torch.manual_seed(42)
