@@ -231,15 +231,17 @@ def rasterization(
     device = means.device
     assert means.shape == (N, 3), means.shape
     if covars is None:
-        raise Exception('Use Covars instead of quats scales please')
         assert quats.shape == (N, 4), quats.shape
         assert scales.shape == (N, 3), scales.shape
-    else:
-        assert covars.shape == (N, 3, 3), covars.shape
-        quats, scales = None, None
-        # convert covars from 3x3 matrix to upper-triangular 6D vector
-        tri_indices = ([0, 0, 0, 1, 1, 2], [0, 1, 2, 1, 2, 2])
-        covars = covars[..., tri_indices[0], tri_indices[1]]
+        covars = build_covariance_3d(scales, quats)
+
+    assert covars.shape == (N, 3, 3), covars.shape
+    quats, scales = None, None
+    # convert covars from 3x3 matrix to upper-triangular 6D vector
+    tri_indices = ([0, 0, 0, 1, 1, 2], [0, 1, 2, 1, 2, 2])
+    covars = covars[..., tri_indices[0], tri_indices[1]]
+
+
     assert opacities.shape == (N,), opacities.shape
     assert viewmats.shape == (C, 4, 4), viewmats.shape
     assert Ks.shape == (C, 3, 3), Ks.shape
@@ -297,21 +299,19 @@ def rasterization(
         # Silently change C from local #Cameras to global #Cameras.
         C = len(viewmats)
 
+
+
     # Project Gaussians to 2D. Directly pass in {quats, scales} is faster than precomputing covars.
     proj_results = fully_fused_projection(
         means=means,
         covars=covars,
-        scales=scales,
         viewmats=viewmats,
         Ks=Ks,
         width=width,
         height=height,
         eps2d=eps2d,
-        packed=packed,
         near_plane=near_plane,
         far_plane=far_plane,
-        radius_clip=radius_clip,
-        sparse_grad=sparse_grad,
         calc_compensations=(rasterize_mode == "antialiased"),
         camera_model=camera_model,
     )
@@ -1469,3 +1469,44 @@ def rasterization_2dgs_inria_wrapper(
         "gaussian_ids": None,
     }
     return (render_colors, render_alphas), meta
+
+
+def build_rotation(r):
+    norm = torch.sqrt(r[:,0]*r[:,0] + r[:,1]*r[:,1] + r[:,2]*r[:,2] + r[:,3]*r[:,3])
+
+    q = r / norm[:, None]
+
+    R = torch.zeros((q.size(0), 3, 3), device='cuda')
+
+    r = q[:, 0]
+    x = q[:, 1]
+    y = q[:, 2]
+    z = q[:, 3]
+
+    R[:, 0, 0] = 1 - 2 * (y*y + z*z)
+    R[:, 0, 1] = 2 * (x*y - r*z)
+    R[:, 0, 2] = 2 * (x*z + r*y)
+    R[:, 1, 0] = 2 * (x*y + r*z)
+    R[:, 1, 1] = 1 - 2 * (x*x + z*z)
+    R[:, 1, 2] = 2 * (y*z - r*x)
+    R[:, 2, 0] = 2 * (x*z - r*y)
+    R[:, 2, 1] = 2 * (y*z + r*x)
+    R[:, 2, 2] = 1 - 2 * (x*x + y*y)
+    return R
+
+
+def build_scaling_rotation(s, r):
+    L = torch.zeros((s.shape[0], 3, 3), dtype=torch.float, device="cuda")
+    R = build_rotation(r)
+
+    L[:,0,0] = s[:,0]
+    L[:,1,1] = s[:,1]
+    L[:,2,2] = s[:,2]
+
+    L = R @ L
+    return L
+
+def build_covariance_3d(s, r):
+    L = build_scaling_rotation(s, r)
+    actual_covariance = L @ L.transpose(1, 2)
+    return actual_covariance

@@ -29,7 +29,7 @@ from utils import (
     set_random_seed,
 )
 
-from gsplat.rendering_torch import rasterization_2dgs, rasterization_2dgs_inria_wrapper
+from gsplat.rendering import _rasterization as rasterization_2dgs, rasterization_2dgs_inria_wrapper
 from gsplat.strategy import DefaultStrategy
 
 

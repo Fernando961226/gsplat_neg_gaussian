@@ -21,7 +21,7 @@ import viser
 
 from gsplat._helper import load_test_data
 from gsplat.distributed import cli
-from gsplat.rendering_torch import rasterization
+from gsplat.rendering import _rasterization as rasterization
 
 
 def main(local_rank: int, world_rank, world_size: int, args):
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     """
     # Use single GPU to view the scene
     CUDA_VISIBLE_DEVICES=0 python simple_viewer.py \
-        --ckpt results/garden/ckpts/ckpt_3499_rank0.pt results/garden/ckpts/ckpt_3499_rank1.pt \
+        --ckpt results/benchmark/garden/ckpts/ckpt_6999_rank0.pt
         --port 8081
     """
     parser = argparse.ArgumentParser()
